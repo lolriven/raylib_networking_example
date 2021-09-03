@@ -26,34 +26,47 @@ workspace "NetTest"
 	defines{"PLATFORM_DESKTOP", "GRAPHICS_API_OPENGL_33"}
 		
 project "raylib"
-		filter "configurations:Debug.DLL OR Release.DLL"
-			kind "SharedLib"
-			defines {"BUILD_LIBTYPE_SHARED"}
-			
-		filter "configurations:Debug OR Release"
-			kind "StaticLib"
-			
-		filter "action:vs*"
-			defines{"_WINSOCK_DEPRECATED_NO_WARNINGS", "_CRT_SECURE_NO_WARNINGS", "_WIN32"}
-			links {"winmm"}
-			
-		filter "action:gmake*"
-			links {"pthread", "GL", "m", "dl", "rt", "X11"}
-			
-		filter{}
+	filter "configurations:Debug.DLL OR Release.DLL"
+		kind "SharedLib"
+		defines {"BUILD_LIBTYPE_SHARED"}
 		
-		location "build"
-		language "C++"
-		targetdir "bin/%{cfg.buildcfg}"
-		cppdialect "C++17"
+	filter "configurations:Debug OR Release"
+		kind "StaticLib"
 		
-		includedirs { "raylib/src", "raylib/src/external/glfw/include"}
-		vpaths 
-		{
-			["Header Files"] = { "raylib/src/**.h"},
-			["Source Files/*"] = {"raylib/src/**.c"},
-		}
-		files {"raylib/src/*.h", "raylib/src/*.c"}
+	filter "system:windows"
+		defines{"_WINSOCK_DEPRECATED_NO_WARNINGS", "_CRT_SECURE_NO_WARNINGS", "_WIN32"}
+		links {"winmm"}
+		
+	filter "system:linux"
+		links {"pthread", "GL", "m", "dl", "rt", "X11"}
+		
+	filter{}
+	
+	location "build"
+	language "C"
+	targetdir "bin/%{cfg.buildcfg}"
+	
+	includedirs { "raylib/src", "raylib/src/external/glfw/include"}
+	vpaths 
+	{
+		["Header Files"] = { "raylib/src/**.h"},
+		["Source Files/*"] = {"raylib/src/**.c"},
+	}
+	files {"raylib/src/*.h", "raylib/src/*.c"}
+		
+project "network_shared"
+	kind "StaticLib"
+	location "build"
+	language "C"
+	targetdir "bin/%{cfg.buildcfg}"
+	
+	includedirs { "include", "network_shared"}
+	vpaths 
+	{
+		["Header Files"] = { "network_shared/**.h"},
+		["Source Files/*"] = {"network_shared/**.c"},
+	}
+	files {"network_shared/*.h", "network_shared/*.c"}
 		
 project "client"
 	kind "ConsoleApp"
@@ -68,18 +81,18 @@ project "client"
 	}
 	files {"client/**.c", "client/**.h"}
 
-	links {"raylib"}
+	links {"raylib", "network_shared"}
 	
-	includedirs { "client", "include", "raylib/src" }
+	includedirs { "client", "include", "raylib/src", "network_shared" }
 	defines{"PLATFORM_DESKTOP", "GRAPHICS_API_OPENGL_33"}
 	
-	filter "action:vs*"
+	filter "system:windows"
 		defines{"_WINSOCK_DEPRECATED_NO_WARNINGS", "_CRT_SECURE_NO_WARNINGS", "_WIN32"}
 		dependson {"raylib"}
 		links {"winmm", "raylib.lib", "kernel32", "Ws2_32"}
 		libdirs {"bin/%{cfg.buildcfg}"}
 		
-	filter "action:gmake*"
+	filter "system:linux"
 		links {"pthread", "GL", "m", "dl", "rt", "X11"}
 		
 project "server"
@@ -87,21 +100,17 @@ project "server"
 	location "server"
 	language "C"
 	targetdir "bin/%{cfg.buildcfg}"
-	
 	vpaths 
 	{
 		["Header Files"] = { "**.h"},
 		["Source Files"] = {"**.c", "**.cpp"},
 	}
 	files {"server/**.c", "server/**.h"}
-
-	includedirs { "server", "include"}
-
-	filter "action:vs*"
+	
+	filter "system:windows"
 		defines{"_WINSOCK_DEPRECATED_NO_WARNINGS", "_CRT_SECURE_NO_WARNINGS", "_WIN32"}
-		dependson {"raylib"}
-		links {"winmm", "kernel32", "Ws2_32"}
+		links {"kernel32", "Ws2_32"}
 		libdirs {"bin/%{cfg.buildcfg}"}
-		
-	filter "action:gmake*"
-		links {"pthread", "GL", "m", "dl", "rt", "X11"}
+
+	includedirs { "server", "include",  "network_shared" }
+	links {"network_shared"}
