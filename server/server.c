@@ -163,12 +163,12 @@ void main()
                 Players[playerId].Peer = event.peer;
 
                 // pack up a message to send back to the client to tell them they have been accepted as a player
-                uint8_t buffer[2] = { 0 };
-                buffer[0] = (uint8_t)AcceptPlayer;  // command for the client
-                buffer[1] = (uint8_t)playerId;      // the player ID so they know who they are
+                ENetPacket* packet = enet_packet_create(NULL, 2, ENET_PACKET_FLAG_RELIABLE);
 
-                // copy the buffer into an enet packet (TODO : add write functions to go directly to a packet)
-                ENetPacket* packet = enet_packet_create(buffer, 2, ENET_PACKET_FLAG_RELIABLE);
+                size_t offset = 0;
+                WriteByte(AcceptPlayer, packet, &offset);
+                WriteByte(playerId, packet, &offset);
+
                 // send the data to the user
                 enet_peer_send(event.peer, 0, packet);
 
@@ -181,16 +181,14 @@ void main()
                         continue;
 
                     // pack up an add player message with the ID and the last known position
-                    uint8_t addBuffer[6] = { 0 };
-                    buffer[0] = (uint8_t)AddPlayer;
-                    buffer[1] = (uint8_t)i;
-                    *(int16_t*)(buffer + 2) = (int16_t)Players[i].X;
-                    *(int16_t*)(buffer + 4) = (int16_t)Players[i].Y;
-
+                    ENetPacket* packet = enet_packet_create(NULL, 6, ENET_PACKET_FLAG_RELIABLE);
+                    offset = 0;
+                    WriteByte(AddPlayer, packet, &offset);
+                    WriteByte(i, packet, &offset);
+                    WriteShort((int16_t)Players[i].X, packet, &offset);
+                    WriteShort((int16_t)Players[i].Y, packet, &offset);
                     // Optimally we'd also send other info like name, color, and other static player info.
 
-                    // copy and send the message
-                    packet = enet_packet_create(buffer, 6, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
 
                     // NOTE enet_host_service will handle releasing send packets when the network system has finally sent them,
@@ -239,14 +237,13 @@ void main()
                     Players[playerId].ValidPosition = true;
 
                     // pack up the update message with command, player and position
-                    uint8_t buffer[6] = { 0 };
-                    buffer[0] = (uint8_t)outboundCommand;
-                    buffer[1] = (uint8_t)playerId;
-                    *(int16_t*)(buffer + 2) = (int16_t)Players[playerId].X;
-                    *(int16_t*)(buffer + 4) = (int16_t)Players[playerId].Y;
+                    ENetPacket* packet = enet_packet_create(NULL, 6, ENET_PACKET_FLAG_RELIABLE);
+                    size_t offset = 0;
+                    WriteByte(outboundCommand, packet, &offset);
+                    WriteByte(playerId, packet, &offset);
+                    WriteShort((int16_t)Players[playerId].X, packet, &offset);
+                    WriteShort((int16_t)Players[playerId].Y, packet, &offset);
 
-                    // Copy and send the data to everyone but the player who sent it  (TODO : add write functions to go directly to a packet)
-                    ENetPacket* packet = enet_packet_create(buffer, 6, ENET_PACKET_FLAG_RELIABLE);
                     SendToAllBut(packet, playerId);
 
                     // NOTE enet_host_service will handle releasing send packets when the network system has finally sent them,
@@ -273,12 +270,11 @@ void main()
                 Players[playerId].Peer = NULL;
 
                 // Tell everyone that someone left
-                uint8_t buffer[2] = { 0 };
-                buffer[0] = (uint8_t)RemovePlayer;
-                buffer[1] = (uint8_t)playerId;
+                ENetPacket* packet = enet_packet_create(NULL, 2, ENET_PACKET_FLAG_RELIABLE);
+                size_t offset = 0;
+                WriteByte(RemovePlayer, packet, &offset);
+                WriteByte(playerId, packet, &offset);
 
-                // Copy and send the data to everyone but the player who sent it  (TODO : add write functions to go directly to a packet)
-                ENetPacket* packet = enet_packet_create(buffer, 2, ENET_PACKET_FLAG_RELIABLE);
                 SendToAllBut(packet, -1);
 
                 // NOTE enet_host_service will handle releasing send packets when the network system has finally sent them,

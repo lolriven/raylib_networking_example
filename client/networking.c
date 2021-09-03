@@ -168,14 +168,18 @@ void Update(double now)
     // this way the server can know how long it's been since the last update and can do interpolation to know were we are between updates.
     if (LocalPlayerId >= 0 && now - LastInputSend > InputUpdateInterval)
     {
-        // Pack up a buffer with the data we want to send
-        uint8_t buffer[5] = { 0 }; // 5 bytes for a 1 byte command number and two bytes for each X and Y value
-        buffer[0] = (uint8_t)UpdateInput;   // this tells the server what kind of data to expect in this packet
-        *(int16_t*)(buffer + 1) = (int16_t)Players[LocalPlayerId].Position.x;
-        *(int16_t*)(buffer + 3) = (int16_t)Players[LocalPlayerId].Position.y;
+         // Pack up a buffer with the data we want to send
+         uint8_t buffer[5] = { 0 }; // 5 bytes for a 1 byte command number and two bytes for each X and Y value
+         buffer[0] = (uint8_t)UpdateInput;   // this tells the server what kind of data to expect in this packet
+         *(int16_t*)(buffer + 1) = (int16_t)Players[LocalPlayerId].Position.x;
+         *(int16_t*)(buffer + 3) = (int16_t)Players[LocalPlayerId].Position.y;
 
         // copy this data into a packet provided by enet (TODO : add pack functions that write directly to the packet to avoid the copy)
-        ENetPacket* packet = enet_packet_create(buffer,5,ENET_PACKET_FLAG_RELIABLE);
+        ENetPacket* packet = enet_packet_create(NULL, 5, ENET_PACKET_FLAG_RELIABLE);
+        size_t offset = 0;
+        WriteByte((uint8_t)UpdateInput, packet, &offset);
+        WriteShort(Players[LocalPlayerId].Position.x, packet, &offset);
+        WriteShort(Players[LocalPlayerId].Position.y, packet, &offset);
 
         // send the packet to the server
         enet_peer_send(server, 0, packet);

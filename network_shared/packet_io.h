@@ -34,19 +34,27 @@
 #include "enet.h"
 
 /// <summary>
-/// Read one byte out of a packet, from an offset, and update that offset to the next location to read from
+/// Read one value out of a packet, from an offset, and update that offset to the next location to read from
 /// </summary>
 /// <param name="packet">The packet to read from</param>
 /// <param name="offset">A pointer to an offset that is updated, this should be passed to other read functions so they read from the correct place</param>
-/// <returns>The byte read</returns>
+/// <returns>The value read</returns>
 uint8_t ReadByte(ENetPacket* packet, size_t* offset);
+int16_t ReadShort(ENetPacket* packet, size_t* offset);
+int32_t ReadInt(ENetPacket* packet, size_t* offset);
+float ReadFloat(ENetPacket* packet, size_t* offset);
+int64_t ReadInt64(ENetPacket* packet, size_t* offset);
+
 
 /// <summary>
-/// Read a signed short from the network packet
-/// Note that this assumes the packet is in the host's byte ordering
-/// In reality read/write code should use ntohs and htons to convert from network byte order to host byte order, so both big endian and little endian machines can play together
+/// writes one byte out of a packet, from an offset, and update that offset to the next location to read from
 /// </summary>
-/// <param name="packet">The packet to read from<</param>
-/// <param name="offset">A pointer to an offset that is updated, this should be passed to other read functions so they read from the correct place</param>
-/// <returns>The signed short that is read</returns>
-int16_t ReadShort(ENetPacket* packet, size_t* offset);
+/// <param name="value">The value to be written from</param>
+/// <param name="packet">The packet to write to</param>
+/// <param name="offset">A pointer to an offset that is updated, this should be passed to other write functions so they write to the correct place</param>
+/// <returns>True if the packet was large enough to hold the value</returns>
+bool WriteByte(uint8_t value, ENetPacket* packet, size_t* offset);
+bool WriteShort(int16_t value, ENetPacket* packet, size_t* offset);
+bool WriteInt(int32_t value, ENetPacket* packet, size_t* offset);
+bool WriteFloat(float value, ENetPacket* packet, size_t* offset);
+bool WriteInt64(int64_t value, ENetPacket* packet, size_t* offset);
