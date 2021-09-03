@@ -9,7 +9,10 @@ This is a simple client/server networking demo that allows up to 8 players to co
 
 When a client is started it will attempt to connect to the server (on localhost by default). Once conncected it will spawn a player with a peset color that the client can move around with the arrow keys. Different colored player objects for other clients will be shown in the window, updating with the respective client. Each client maintains a local simulation state that represents the gameplay state that it is aware of. The server also maintains a state of the last known positon of each connected player.
 
-This example is not a robust networking system and is only intended as a simple example of how to setup a basic client/server system. Game networking is a very complex subject with many subtle nuances. Different network setups are required for different kinds of games. For action games a good place to start is the information released by Valve regarding how the game Half Life handled networking.
+### Notes
+This example is not a robust networking system and is only intended as a simple example of how to setup a basic client/server system. Game networking is a very complex subject with many subtle nuances. Networking is not something that can just be attached to a single player game. A game needs to be built with networking in mind from the ground up. Even in this simple example, the core gameplay system is built into the networking layer, not the main application. Network games must be designed to take latency and data loss into account. If your game relies on every player having the exact same gamestate at the same time, then it will not work well in a network environment.
+
+Different network setups are required for different kinds of games. For good networking you will need to research the best solution for game type. For action games a good place to start is the information released by Valve regarding how the game Half Life handled networking.
 https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking
 https://developer.valvesoftware.com/wiki/Lag_compensation
 https://developer.valvesoftware.com/wiki/Latency_Compensating_Methods_in_Client/Server_In-game_Protocol_Design_and_Optimization
@@ -49,5 +52,33 @@ All network iformation is sent as commands. Commands are encoded into the networ
 
 ## Packet Data
 In this example network data is packaged up in the native format for the sending computer. This means that computers with different byte ordering (https://en.wikipedia.org/wiki/Endianness) can not communicate with each other. A real game would encode all data into Network Byte Order on send and decode on receive.
+
+## Example Data Flow
+
+Client -> Server
+Client startup and connects to server.
+
+Server receives connection request and allocates a player ID for the new user
+	If the server is full the new player is rejected.
+	
+Server -> Client
+Server sends Acccept messaage back to player with player ID
+Server sends Add Player message for all existing players to new player
+
+Client receives accept message
+Client adds self to player list and marks connection as active
+Client gameplay loop starts polling for local player input
+
+Client receives Add Player messages and updates local simulation state
+
+Every frame on the client, input is polled and a new local player position is updated in the local simulation.
+
+Client -> Server
+Every network tick (1/20th of a second), the local player's location is sent as an input update to the server.
+
+Server -> Client
+When the server receiives an input update, it updates the server game state with the new position and sends an Update Player message to all players.
+
+As clients receive update messages they set the local simulation to match the last known location of each remote player.
 
 
