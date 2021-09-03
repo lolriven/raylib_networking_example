@@ -1,8 +1,8 @@
 # Raylib Networking Example
 A simple example of how to do networking using raylib and enet.
 
-Raylib can be found at https://github.com/raysan5/raylib, but is a subnet module for this repository
-Enet can be found at https://github.com/zpl-c/enet but is also included in this repository
+* Raylib can be found at https://github.com/raysan5/raylib, but is a subnet module for this repository
+* Enet can be found at https://github.com/zpl-c/enet but is also included in this repository
 
 ## About
 This is a simple client/server networking demo that allows up to 8 players to connect to a server and move boxes around a fixed size area. It is written in Pure C using Raylib for graphics and window setup and the ZPL-C version of enet for networking.
@@ -13,9 +13,9 @@ When a client is started it will attempt to connect to the server (on localhost 
 This example is not a robust networking system and is only intended as a simple example of how to setup a basic client/server system. Game networking is a very complex subject with many subtle nuances. Networking is not something that can just be attached to a single player game. A game needs to be built with networking in mind from the ground up. Even in this simple example, the core gameplay system is built into the networking layer, not the main application. Network games must be designed to take latency and data loss into account. If your game relies on every player having the exact same gamestate at the same time, then it will not work well in a network environment.
 
 Different network setups are required for different kinds of games. For good networking you will need to research the best solution for game type. For action games a good place to start is the information released by Valve regarding how the game Half Life handled networking.
-https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking
-https://developer.valvesoftware.com/wiki/Lag_compensation
-https://developer.valvesoftware.com/wiki/Latency_Compensating_Methods_in_Client/Server_In-game_Protocol_Design_and_Optimization
+* https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking
+* https://developer.valvesoftware.com/wiki/Lag_compensation
+* https://developer.valvesoftware.com/wiki/Latency_Compensating_Methods_in_Client/Server_In-game_Protocol_Design_and_Optimization
 
 ## Building the Example
 This example uses premake.
@@ -32,9 +32,9 @@ The server is entirely contained within the server.c file. It is very simple and
 
 ### Client
 The client is broken up into 3 files
-main.c
-networking.h
-networking.c
+* main.c
+* networking.h
+* networking.c
 
 #### main.c
 The main file is where the normal raylib window is setup, input is checked and the game is drawn. Every frame the input is checked, the player is updated and the field is drawn with all players on it.
