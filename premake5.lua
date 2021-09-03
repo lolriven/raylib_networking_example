@@ -35,7 +35,8 @@ project "raylib"
 		
 	filter "system:windows"
 		defines{"_WINSOCK_DEPRECATED_NO_WARNINGS", "_CRT_SECURE_NO_WARNINGS", "_WIN32"}
-		links {"winmm"}
+		filter "configurations:Debug.DLL OR Release.DLL"
+			links {"winmm", "kernel32", "opengl32", "gdi32"}
 		
 	filter "system:linux"
 		links {"pthread", "GL", "m", "dl", "rt", "X11"}
@@ -89,7 +90,7 @@ project "client"
 	filter "system:windows"
 		defines{"_WINSOCK_DEPRECATED_NO_WARNINGS", "_CRT_SECURE_NO_WARNINGS", "_WIN32"}
 		dependson {"raylib"}
-		links {"winmm", "raylib.lib", "kernel32", "Ws2_32"}
+		links {"winmm", "kernel32", "opengl32", "gdi32"}
 		libdirs {"bin/%{cfg.buildcfg}"}
 		
 	filter "system:linux"
