@@ -163,13 +163,13 @@ void SendToAllBut(ENetPacket* packet, int exceptPlayerId)
 }
 
 // the main server loop
-void main()
+int main()
 {
     printf("Startup\n");
 
     // set up networking
     if (enet_initialize() != 0)
-        return;
+        return 1;
 
     printf("Initialized\n");
 
@@ -184,7 +184,7 @@ void main()
     ENetHost* server = enet_host_create(&address, MAX_CLIENTS, 1, 0, 0);
 
     if (server == NULL)
-        return;
+        return 1;
 
     printf("Created\n");
 
@@ -365,4 +365,6 @@ void main()
     // cleanup
     enet_host_destroy(server);
     enet_deinitialize();
+
+    return 0;
 }

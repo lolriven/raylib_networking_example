@@ -52,7 +52,7 @@ void SetColors()
 }
 
 // main game client
-void main()
+int main()
 {
     SetColors();
 
@@ -135,4 +135,6 @@ void main()
     // cleanup
     Disconnect();
     CloseWindow();
+
+    return 0;
 }
