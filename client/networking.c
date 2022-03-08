@@ -201,7 +201,7 @@ void HandleAddPlayer(ENetPacket* packet, size_t* offset)
     // set them as active and update the location
     Players[remotePlayer].Active = true;
     Players[remotePlayer].Position = ReadPosition(packet, offset);
-    Players[remotePlayer].Direction = Vector2Zero();
+    Players[remotePlayer].Direction = ReadPosition(packet, offset);
     Players[remotePlayer].UpdateTime = LastNow;
 
     // In a more robust game, this message would have more info about the new player, such as what sprite or model to use, player name, or other data a client would need
