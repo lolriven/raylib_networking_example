@@ -80,6 +80,9 @@ typedef struct
     // the last known location in X and Y
     int16_t X;
     int16_t Y;
+
+    int16_t DX;
+    int16_t DY;
 }PlayerInfo;
 
 
@@ -256,16 +259,18 @@ int main()
                         continue;
 
                     // pack up an add player message with the ID and the last known position
-                    uint8_t addBuffer[6] = { 0 };
-                    buffer[0] = (uint8_t)AddPlayer;
-                    buffer[1] = (uint8_t)i;
-                    *(int16_t*)(buffer + 2) = (int16_t)Players[i].X;
-                    *(int16_t*)(buffer + 4) = (int16_t)Players[i].Y;
+                    uint8_t addBuffer[10] = { 0 };
+                    addBuffer[0] = (uint8_t)AddPlayer;
+                    addBuffer[1] = (uint8_t)i;
+                    *(int16_t*)(addBuffer + 2) = (int16_t)Players[i].X;
+                    *(int16_t*)(addBuffer + 4) = (int16_t)Players[i].Y;
+                    *(int16_t*)(addBuffer + 6) = (int16_t)Players[i].DX;
+                    *(int16_t*)(addBuffer + 8) = (int16_t)Players[i].DY;
 
                     // Optimally we'd also send other info like name, color, and other static player info.
 
                     // copy and send the message
-                    packet = enet_packet_create(buffer, 6, ENET_PACKET_FLAG_RELIABLE);
+                    packet = enet_packet_create(addBuffer, 10, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
 
                     // NOTE enet_host_service will handle releasing send packets when the network system has finally sent them,
@@ -302,6 +307,8 @@ int main()
                     // update the location data with the new info
                     Players[playerId].X = ReadShort(event.packet, &offset);
                     Players[playerId].Y = ReadShort(event.packet, &offset);
+                    Players[playerId].DX = ReadShort(event.packet, &offset);
+                    Players[playerId].DY = ReadShort(event.packet, &offset);
 
                     // lets tell everyone about this new location
                     NetworkCommands outboundCommand = UpdatePlayer;
@@ -314,14 +321,17 @@ int main()
                     Players[playerId].ValidPosition = true;
 
                     // pack up the update message with command, player and position
-                    uint8_t buffer[6] = { 0 };
+                    uint8_t buffer[10] = { 0 };
                     buffer[0] = (uint8_t)outboundCommand;
                     buffer[1] = (uint8_t)playerId;
                     *(int16_t*)(buffer + 2) = (int16_t)Players[playerId].X;
                     *(int16_t*)(buffer + 4) = (int16_t)Players[playerId].Y;
+                    *(int16_t*)(buffer + 6) = (int16_t)Players[playerId].DX;
+                    *(int16_t*)(buffer + 8) = (int16_t)Players[playerId].DY;
+
 
                     // Copy and send the data to everyone but the player who sent it  (TODO : add write functions to go directly to a packet)
-                    ENetPacket* packet = enet_packet_create(buffer, 6, ENET_PACKET_FLAG_RELIABLE);
+                    ENetPacket* packet = enet_packet_create(buffer, 10, ENET_PACKET_FLAG_RELIABLE);
                     SendToAllBut(packet, playerId);
 
                     // NOTE enet_host_service will handle releasing send packets when the network system has finally sent them,

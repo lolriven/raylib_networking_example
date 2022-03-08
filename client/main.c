@@ -77,7 +77,7 @@ int main()
 
             // cache of the incremental amount we are going to move this frame
             Vector2 movement = { 0 };
-            float speed = moveSpeed * GetFrameTime();
+            float speed = moveSpeed;
 
             // see what axes we move in
             if (IsKeyDown(KEY_UP))
@@ -92,7 +92,7 @@ int main()
         
             // tell the network game play client that we moved
             // it will update the local simulation and cache the data until the next network tick time
-            UpdateLocalPlayer(&movement);
+            UpdateLocalPlayer(&movement, GetFrameTime());
         }
         else if (connected)
         {
@@ -103,7 +103,7 @@ int main()
 
         // let the network game system update
         // this will process any inbound events and update the local simulation
-        Update(GetTime());
+        Update(GetTime(), GetFrameTime());
 
         // draw our game screen
         BeginDrawing();
