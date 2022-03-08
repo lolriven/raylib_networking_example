@@ -69,11 +69,17 @@ typedef struct
 
     // the last known location of the player on the field
     Vector2 Position;
+
+    // the direction they were going
     Vector2 Direction;
 
+    // the time we got the last update
+    double UpdateTime;
+
+    //where we think this item is right now based on the movement vector
     Vector2 ExtrapolatedPosition;
 
-    double UpdateTime;
+
 }RemotePlayer;
 
 // The list of all possible players
@@ -205,7 +211,7 @@ void HandleAddPlayer(ENetPacket* packet, size_t* offset)
     Players[remotePlayer].UpdateTime = LastNow;
 
     // In a more robust game, this message would have more info about the new player, such as what sprite or model to use, player name, or other data a client would need
-    // this is where static data about the player would be sent, and any inital state needed to setup the local simulation
+    // this is where static data about the player would be sent, and any initial state needed to setup the local simulation
 }
 
 // A remote player has left the game and needs to be removed from the local simulation
@@ -228,13 +234,13 @@ void HandleUpdatePlayer(ENetPacket* packet, size_t* offset)
     if (remotePlayer >= MAX_PLAYERS || remotePlayer == LocalPlayerId || !Players[remotePlayer].Active)
         return;
 
-    // update the last known position
+    // update the last known position and movement
     Players[remotePlayer].Position = ReadPosition(packet, offset);
     Players[remotePlayer].Direction = ReadPosition(packet, offset);
     Players[remotePlayer].UpdateTime = LastNow;
 
     // in a more robust game this message would have a tick ID for what time this information was valid, and extra info about
-    // what direction the player was moving so the local simulation could do prediction and smooth out the motion
+    // what the input state was so the local simulation could do prediction and smooth out the motion
 }
 
 // process one frame of updates
@@ -247,7 +253,7 @@ void Update(double now, float deltaT)
 
     // Check if we have been accepted, and if so, check the clock to see if it is time for us to send the updated position for the local player
     // we do this so that we don't spam the server with updates 60 times a second and waste bandwidth
-    // in a real game we'd send our movement vector and input keys along with what the current tick index was
+    // in a real game we'd send our normalized movement vector or input keys along with what the current tick index was
     // this way the server can know how long it's been since the last update and can do interpolation to know were we are between updates.
     if (LocalPlayerId >= 0 && now - LastInputSend > InputUpdateInterval)
     {
@@ -353,6 +359,7 @@ void Update(double now, float deltaT)
         }
     }
 
+    // update all the remote players with an interpolated position based on the last known good pos and how long it has been since an update
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
         if (i == LocalPlayerId || !Players[i].Active)
@@ -425,7 +432,7 @@ bool GetPlayerPos(int id, Vector2* pos)
     if (id < 0 || id >= MAX_PLAYERS || !Players[id].Active)
         return false;
 
-    // copy the location
+    // copy the location (real or extrapolated)
     if (id == LocalPlayerId)
         *pos = Players[id].Position;
     else
