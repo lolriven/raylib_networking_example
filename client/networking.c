@@ -59,6 +59,8 @@ double LastInputSend = -100;
 // how long to wait between updates (20 update ticks a second)
 double InputUpdateInterval = 1.0f / 20.0f;
 
+double LastNow = 0;
+
 // Data about players
 typedef struct
 {
@@ -67,6 +69,11 @@ typedef struct
 
     // the last known location of the player on the field
     Vector2 Position;
+    Vector2 Direction;
+
+    Vector2 ExtrapolatedPosition;
+
+    double UpdateTime;
 }RemotePlayer;
 
 // The list of all possible players
@@ -194,6 +201,8 @@ void HandleAddPlayer(ENetPacket* packet, size_t* offset)
     // set them as active and update the location
     Players[remotePlayer].Active = true;
     Players[remotePlayer].Position = ReadPosition(packet, offset);
+    Players[remotePlayer].Direction = Vector2Zero();
+    Players[remotePlayer].UpdateTime = LastNow;
 
     // In a more robust game, this message would have more info about the new player, such as what sprite or model to use, player name, or other data a client would need
     // this is where static data about the player would be sent, and any inital state needed to setup the local simulation
@@ -221,14 +230,17 @@ void HandleUpdatePlayer(ENetPacket* packet, size_t* offset)
 
     // update the last known position
     Players[remotePlayer].Position = ReadPosition(packet, offset);
+    Players[remotePlayer].Direction = ReadPosition(packet, offset);
+    Players[remotePlayer].UpdateTime = LastNow;
 
     // in a more robust game this message would have a tick ID for what time this information was valid, and extra info about
     // what direction the player was moving so the local simulation could do prediction and smooth out the motion
 }
 
 // process one frame of updates
-void Update(double now)
+void Update(double now, float deltaT)
 {
+    LastNow = now;
     // if we are not connected to anything yet, we can't do anything, so bail out early
     if (server == NULL)
         return;
@@ -240,13 +252,15 @@ void Update(double now)
     if (LocalPlayerId >= 0 && now - LastInputSend > InputUpdateInterval)
     {
         // Pack up a buffer with the data we want to send
-        uint8_t buffer[5] = { 0 }; // 5 bytes for a 1 byte command number and two bytes for each X and Y value
+        uint8_t buffer[9] = { 0 }; // 9 bytes for a 1 byte command number and two bytes for each X and Y value
         buffer[0] = (uint8_t)UpdateInput;   // this tells the server what kind of data to expect in this packet
         *(int16_t*)(buffer + 1) = (int16_t)Players[LocalPlayerId].Position.x;
         *(int16_t*)(buffer + 3) = (int16_t)Players[LocalPlayerId].Position.y;
+        *(int16_t*)(buffer + 5) = (int16_t)Players[LocalPlayerId].Direction.x;
+        *(int16_t*)(buffer + 7) = (int16_t)Players[LocalPlayerId].Direction.y;
 
         // copy this data into a packet provided by enet (TODO : add pack functions that write directly to the packet to avoid the copy)
-        ENetPacket* packet = enet_packet_create(buffer,5,ENET_PACKET_FLAG_RELIABLE);
+        ENetPacket* packet = enet_packet_create(buffer,9,ENET_PACKET_FLAG_RELIABLE);
 
         // send the packet to the server
         enet_peer_send(server, 0, packet);
@@ -338,6 +352,14 @@ void Update(double now)
             break;
         }
     }
+
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (i == LocalPlayerId || !Players[i].Active)
+            continue;
+        double delta = LastNow - Players[i].UpdateTime;
+        Players[i].ExtrapolatedPosition = Vector2Add(Players[i].Position, Vector2Scale(Players[i].Direction, delta));
+    }
 }
 
 // force a disconnect by shutting down enet
@@ -370,14 +392,14 @@ int GetLocalPlayerId()
 }
 
 // add the input to our local position and make sure we are still inside the field
-void UpdateLocalPlayer(Vector2* movementDelta)
+void UpdateLocalPlayer(Vector2* movementDelta, float deltaT)
 {
     // if we are not accepted, we can't update
     if (LocalPlayerId < 0)
         return;
 
     // add the movement to our location
-    Players[LocalPlayerId].Position = Vector2Add(Players[LocalPlayerId].Position, *movementDelta);
+    Players[LocalPlayerId].Position = Vector2Add(Players[LocalPlayerId].Position, Vector2Scale(*movementDelta, deltaT));
 
     // make sure we are in bounds.
     // In a real game both the client and the server would do this to help prevent cheaters
@@ -392,6 +414,8 @@ void UpdateLocalPlayer(Vector2* movementDelta)
 
     if (Players[LocalPlayerId].Position.y > FieldSizeHeight - PlayerSize)
         Players[LocalPlayerId].Position.y = FieldSizeHeight - PlayerSize;
+
+    Players[LocalPlayerId].Direction = *movementDelta;
 }
 
 // get the info for a particular player
@@ -402,6 +426,9 @@ bool GetPlayerPos(int id, Vector2* pos)
         return false;
 
     // copy the location
-    *pos = Players[id].Position;
+    if (id == LocalPlayerId)
+        *pos = Players[id].Position;
+    else
+        *pos = Players[id].ExtrapolatedPosition;
     return true;
 }

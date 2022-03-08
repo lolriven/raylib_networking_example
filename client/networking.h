@@ -41,7 +41,7 @@
 void Connect();
 
 // Process one frame of updates
-void Update(double now);
+void Update(double now, float deltaT);
 
 // Disconnect from the server
 void Disconnect();
@@ -50,7 +50,7 @@ void Disconnect();
 bool Connected();
 
 // Tell the network game play how far we wanted to move this frame
-void UpdateLocalPlayer(Vector2* movementDelta);
+void UpdateLocalPlayer(Vector2* movementDelta, float deltaT);
 
 // get the id that the server assigned to us
 int GetLocalPlayerId();
