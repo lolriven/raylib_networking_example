@@ -29,10 +29,11 @@
 // server code
 
 // ensure we are using winsock2 on windows.
-#ifndef _WIN32_WINNT
+// ensure we are using winsock2 on windows.
+#if (_WIN32_WINNT < 0x0601)
+	#undef _WIN32_WINNT
     #define _WIN32_WINNT 0x0601
 #endif
-
 
 // include the network layer from enet (https://github.com/zpl-c/enet)
 #define ENET_IMPLEMENTATION
